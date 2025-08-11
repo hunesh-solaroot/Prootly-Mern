@@ -143,7 +143,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     onSuccess: (data) => {
       console.log("Planset created successfully:", data);
       toast({ title: "Success", description: "Planset uploaded successfully!" });
-      queryClient.invalidateQueries({ queryKey: ["/api/plansets"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/plansets'] });
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/plansets`] });
       }
