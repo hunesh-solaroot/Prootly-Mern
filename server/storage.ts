@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Employee, type InsertEmployee, type Client, type InsertClient, type Project, type InsertProject, type Comment, type InsertComment } from "@shared/schema";
+import { type User, type InsertUser, type Employee, type InsertEmployee, type Client, type InsertClient, type Project, type InsertProject, type Comment, type InsertComment, type Planset, type InsertPlanset } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -31,6 +31,13 @@ export interface IStorage {
   // Comment methods
   getComments(): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
+
+  // Planset methods
+  getPlansets(): Promise<Planset[]>;
+  getPlansetsByProjectId(projectId: string): Promise<Planset[]>;
+  createPlanset(planset: InsertPlanset): Promise<Planset>;
+  updatePlanset(id: string, planset: Partial<InsertPlanset>): Promise<Planset | undefined>;
+  deletePlanset(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,6 +46,7 @@ export class MemStorage implements IStorage {
   private clients: Map<string, Client>;
   private projects: Map<string, Project>;
   private comments: Map<string, Comment>;
+  private plansets: Map<string, Planset>;
 
   constructor() {
     this.users = new Map();
@@ -46,6 +54,7 @@ export class MemStorage implements IStorage {
     this.clients = new Map();
     this.projects = new Map();
     this.comments = new Map();
+    this.plansets = new Map();
 
     // Initialize with some sample data
     this.initializeSampleData();
@@ -289,6 +298,70 @@ export class MemStorage implements IStorage {
     };
     this.comments.set(id, comment);
     return comment;
+  }
+
+  // Planset methods
+  async getPlansets(): Promise<Planset[]> {
+    return Array.from(this.plansets.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  async getPlansetsByProjectId(projectId: string): Promise<Planset[]> {
+    return Array.from(this.plansets.values())
+      .filter(planset => planset.projectId === projectId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createPlanset(insertPlanset: InsertPlanset): Promise<Planset> {
+    const id = randomUUID();
+    const now = new Date();
+    const planset: Planset = {
+      ...insertPlanset,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      timezone: insertPlanset.timezone || null,
+      receivedTime: insertPlanset.receivedTime || null,
+      portalName: insertPlanset.portalName || null,
+      customerPhone: insertPlanset.customerPhone || null,
+      coordinates: insertPlanset.coordinates || null,
+      apnNumber: insertPlanset.apnNumber || null,
+      authorityHavingJurisdiction: insertPlanset.authorityHavingJurisdiction || null,
+      utilityName: insertPlanset.utilityName || null,
+      addOnEquipments: insertPlanset.addOnEquipments || null,
+      governingCodes: insertPlanset.governingCodes || null,
+      moduleManufacturer: insertPlanset.moduleManufacturer || null,
+      moduleModelNo: insertPlanset.moduleModelNo || null,
+      moduleQuantity: insertPlanset.moduleQuantity || null,
+      inverterManufacturer: insertPlanset.inverterManufacturer || null,
+      inverterModelNo: insertPlanset.inverterModelNo || null,
+      inverterQuantity: insertPlanset.inverterQuantity || null,
+      newConstruction: insertPlanset.newConstruction ?? false,
+      existingSolarSystem: insertPlanset.existingSolarSystem ?? false,
+      proposalDesignFiles: insertPlanset.proposalDesignFiles || [],
+      sitesurveyAttachments: insertPlanset.sitesurveyAttachments || [],
+      additionalComments: insertPlanset.additionalComments || null,
+    };
+    this.plansets.set(id, planset);
+    return planset;
+  }
+
+  async updatePlanset(id: string, updateData: Partial<InsertPlanset>): Promise<Planset | undefined> {
+    const existing = this.plansets.get(id);
+    if (!existing) return undefined;
+
+    const updated: Planset = {
+      ...existing,
+      ...updateData,
+      updatedAt: new Date(),
+    };
+    this.plansets.set(id, updated);
+    return updated;
+  }
+
+  async deletePlanset(id: string): Promise<boolean> {
+    return this.plansets.delete(id);
   }
 }
 

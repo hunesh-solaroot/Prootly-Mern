@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertEmployeeSchema, insertClientSchema, insertCommentSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertClientSchema, insertCommentSchema, insertPlansetSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Employee routes
@@ -329,6 +329,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(comment);
     } catch (error) {
       res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Planset routes
+  app.get("/api/plansets", async (req, res) => {
+    try {
+      const plansets = await storage.getPlansets();
+      res.json(plansets);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch plansets" });
+    }
+  });
+
+  app.get("/api/projects/:projectId/plansets", async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const plansets = await storage.getPlansetsByProjectId(projectId);
+      res.json(plansets);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch plansets for project" });
+    }
+  });
+
+  app.post("/api/plansets", async (req, res) => {
+    try {
+      const result = insertPlansetSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid planset data", 
+          errors: result.error.errors 
+        });
+      }
+      const planset = await storage.createPlanset(result.data);
+      res.status(201).json(planset);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create planset" });
+    }
+  });
+
+  app.put("/api/plansets/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = insertPlansetSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid planset data", 
+          errors: result.error.errors 
+        });
+      }
+      const planset = await storage.updatePlanset(id, result.data);
+      if (!planset) {
+        return res.status(404).json({ message: "Planset not found" });
+      }
+      res.json(planset);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update planset" });
+    }
+  });
+
+  app.delete("/api/plansets/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deletePlanset(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Planset not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete planset" });
     }
   });
 

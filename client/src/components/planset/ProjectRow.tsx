@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Activity, MoreHorizontal } from 'lucide-react';
+import { Edit, Activity, MoreHorizontal, Upload } from 'lucide-react';
 import { IPlanset, SortConfig, TableFilters } from '@shared/types';
+import { UploadPlansetModal } from '../UploadPlansetModal';
 
 
 interface ProjectRowProps {
@@ -11,6 +13,8 @@ interface ProjectRowProps {
 }
 
 export function ProjectRow({ project }: ProjectRowProps) {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
   const getStatusVariant = (status: IPlanset['status']): "default" | "secondary" | "destructive" | "outline" => {
     if (status === 'IN PROGRESS') return 'default';
     if (status === 'COMPLETED') return 'secondary';
@@ -55,6 +59,14 @@ export function ProjectRow({ project }: ProjectRowProps) {
       </TableCell>
       <TableCell className="text-right">
         <div className="flex gap-1 justify-end">
+          <Button 
+            size="sm" 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setShowUploadModal(true)}
+          >
+            <Upload className="w-4 h-4 mr-1" />
+            Upload Planset
+          </Button>
           <Button size="sm" className="bg-green-600 hover:bg-green-700">Edit</Button>
           <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600">Activity</Button>
           <DropdownMenu>
@@ -70,6 +82,14 @@ export function ProjectRow({ project }: ProjectRowProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {showUploadModal && (
+          <UploadPlansetModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            projectId={project.id}
+          />
+        )}
       </TableCell>
     </TableRow>
   );

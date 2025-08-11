@@ -53,6 +53,62 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const plansets = pgTable("plansets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id),
+  
+  // Timezone and Time Info
+  timezone: text("timezone"),
+  receivedTime: timestamp("received_time"),
+  portalName: text("portal_name"),
+  companyName: text("company_name").notNull(),
+  
+  // Homeowner Information
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  siteAddress: text("site_address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  
+  // Map Coordinates
+  coordinates: text("coordinates"),
+  
+  // APN and Project Info
+  apnNumber: text("apn_number"),
+  authorityHavingJurisdiction: text("authority_having_jurisdiction"),
+  utilityName: text("utility_name"),
+  mountType: text("mount_type").notNull(),
+  addOnEquipments: text("add_on_equipments"),
+  governingCodes: text("governing_codes"),
+  
+  // Property and Job Types
+  propertyType: text("property_type").notNull(), // residential, commercial
+  jobType: text("job_type").notNull(), // pv, pv+battery, battery
+  newConstruction: boolean("new_construction").notNull().default(false),
+  
+  // Module Information
+  moduleManufacturer: text("module_manufacturer"),
+  moduleModelNo: text("module_model_no"),
+  moduleQuantity: integer("module_quantity"),
+  
+  // Inverter Information
+  inverterManufacturer: text("inverter_manufacturer"),
+  inverterModelNo: text("inverter_model_no"),
+  inverterQuantity: integer("inverter_quantity"),
+  
+  // Solar System
+  existingSolarSystem: boolean("existing_solar_system").notNull().default(false),
+  
+  // File Attachments (stored as JSON array of file paths)
+  proposalDesignFiles: text("proposal_design_files").array(),
+  sitesurveyAttachments: text("sitesurvey_attachments").array(),
+  additionalComments: text("additional_comments"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const comments = pgTable("comments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   author: text("author").notNull(),
@@ -92,6 +148,12 @@ export const insertEmployeeProfileSchema = createInsertSchema(employeeProfiles).
   updatedAt: true,
 });
 
+export const insertPlansetSchema = createInsertSchema(plansets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -109,3 +171,6 @@ export type Comment = typeof comments.$inferSelect;
 
 export type InsertEmployeeProfile = z.infer<typeof insertEmployeeProfileSchema>;
 export type EmployeeProfile = typeof employeeProfiles.$inferSelect;
+
+export type InsertPlanset = z.infer<typeof insertPlansetSchema>;
+export type Planset = typeof plansets.$inferSelect;
