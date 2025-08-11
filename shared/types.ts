@@ -99,3 +99,42 @@ export interface LeaveSummary {
   sickLeaves: number;
   annualLeaves: number;
 }
+
+export interface IPlanset {
+  id: string;
+  customer: {
+    name: string;
+    type: 'Residential' | 'Commercial';
+    address: string;
+    initials: string;
+    color: string;
+  };
+  projectDetails: string;
+  keyDates: {
+    created: string;
+    received: string;
+  };
+  status: 'IN PROGRESS' | 'READY FOR DESIGN' | 'COMPLETED' | 'ON HOLD';
+  assignedTo?: string;
+  countdown: string;
+  autoComplete: string;
+  priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+export interface SortConfig {
+  key: keyof IPlanset | 'customer' | 'created' | null;
+  direction: 'asc' | 'desc';
+}
+export interface TableFilters {
+  search: string;
+  states: Set<string>;
+  portals: Set<string>;
+}
+
+
+
+
+
+
+
+
+
