@@ -41,7 +41,7 @@ type PlansetFormData = z.infer<typeof plansetFormSchema> & {
 interface UploadPlansetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  projectId: string;
+  projectId?: string;
 }
 
 export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlansetModalProps) {
@@ -56,17 +56,17 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const form = useForm<PlansetFormData>({
     resolver: zodResolver(plansetFormSchema),
     defaultValues: {
-      projectId,
-      timezone: "",
-      receivedTime: "",
-      portalName: "",
-      companyName: "",
+      projectId: projectId || "auto-generated",
+      timezone: "PST",
+      receivedTime: new Date().toISOString().slice(0, 16),
+      portalName: "Main Portal",
+      companyName: "Solar Company",
       customerName: "",
       customerEmail: "",
       customerPhone: "",
       siteAddress: "",
       city: "",
-      state: "",
+      state: "CA",
       coordinates: "",
       apnNumber: "",
       authorityHavingJurisdiction: "",

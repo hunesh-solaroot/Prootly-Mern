@@ -1,9 +1,11 @@
-import { Search, Plus, Filter, Calendar, MapPin, Building, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Plus, Filter, Calendar, MapPin, Building, ChevronDown, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IPlanset, SortConfig, TableFilters } from '@shared/types';
 import { FilterControls } from './FilterControls';
+import { UploadPlansetModal } from '../UploadPlansetModal';
 
 interface PlansetHeaderProps {
     filters: TableFilters;
@@ -26,6 +28,8 @@ const FilterIcon = () => (
 );
 
 export function PlansetHeader({ filters, onFiltersChange, showFilters, onToggleFilters }: PlansetHeaderProps) {
+    const [showUploadModal, setShowUploadModal] = useState(false);
+
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onFiltersChange({ ...filters, search: e.target.value });
     };
@@ -51,7 +55,14 @@ export function PlansetHeader({ filters, onFiltersChange, showFilters, onToggleF
                             </PopoverTrigger>
                             <PopoverContent className="w-36 p-1">
                                 <Button variant="ghost" className="w-full justify-start font-normal">Create</Button>
-                                <Button variant="ghost" className="w-full justify-start font-normal">Upload</Button>
+                                <Button 
+                                    variant="ghost" 
+                                    className="w-full justify-start font-normal"
+                                    onClick={() => setShowUploadModal(true)}
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Upload
+                                </Button>
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -83,6 +94,14 @@ export function PlansetHeader({ filters, onFiltersChange, showFilters, onToggleF
                         </div>
                     </div>
                 </div>
+
+                {/* Upload Planset Modal */}
+                {showUploadModal && (
+                    <UploadPlansetModal
+                        isOpen={showUploadModal}
+                        onClose={() => setShowUploadModal(false)}
+                    />
+                )}
         </header>
     );
 }
