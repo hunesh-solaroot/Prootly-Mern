@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, MapPin, Upload, Plus } from "lucide-react";
+import { MapPin, Upload, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,7 +72,6 @@ interface UploadPlansetModalProps {
 }
 
 export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlansetModalProps) {
-  const [currentStep, setCurrentStep] = useState(1);
   const [mapCoordinates, setMapCoordinates] = useState<string>("");
   const [proposalFiles, setProposalFiles] = useState<string[]>([]);
   const [sitesurveyFiles, setSitesurveyFiles] = useState<string[]>([]);
@@ -133,7 +132,6 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
       
       if (!response.ok) {
         console.error("API error:", result);
-        // Create a detailed error with the API response
         const error = new Error(result.message || 'Failed to create planset');
         (error as any).response = { data: result };
         throw error;
@@ -155,7 +153,6 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     onError: (error: any) => {
       console.error("Mutation error:", error);
       
-      // Try to extract detailed error information
       let errorMessage = error?.message || "Failed to upload planset";
       if (error?.response?.data?.errors) {
         const fieldErrors = error.response.data.errors.map((err: any) => 
@@ -180,7 +177,6 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const handleFileUpload = (type: 'proposal' | 'sitesurvey', files: FileList | null) => {
     if (!files) return;
     
-    // For development, simulate file upload with file names
     const fileNames = Array.from(files).map(file => `uploads/${Date.now()}-${file.name}`);
     
     if (type === 'proposal') {
@@ -204,11 +200,10 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     console.log("Proposal files:", proposalFiles);
     console.log("Sitesurvey files:", sitesurveyFiles);
     
-    // Ensure all required fields have values
     const submitData: any = {
       projectId: data.projectId || `planset-${Date.now()}`,
       timezone: data.timezone || "PST",
-      receivedTime: data.receivedTime, // Keep as string, server will handle conversion
+      receivedTime: data.receivedTime,
       portalName: data.portalName || "Main Portal",
       companyName: data.companyName || "Solar Company",
       customerName: data.customerName,
@@ -243,71 +238,34 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     createPlansetMutation.mutate(submitData);
   };
 
-  const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[90vw] h-[90vh] overflow-hidden p-0 bg-white dark:bg-gray-900">
+        
+        {/* Header */}
+        <DialogHeader className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <Upload className="w-5 h-5" />
             Upload Planset
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Step Indicator */}
-          <div className="flex items-center justify-between mb-6">
-            {[1, 2, 3].map((step) => (
-              <div
-                key={step}
-                className={`flex items-center ${
-                  step < 3 ? "flex-1" : ""
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= step
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {step}
-                </div>
-                {step < 3 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-2 ${
-                      currentStep > step ? "bg-green-500" : "bg-gray-200"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Step 1: Basic Information */}
-          {currentStep === 1 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            
+            {/* Basic Information Section */}
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">Basic Information</h2>
+              
+              {/* System Configuration */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">System Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <Label htmlFor="timezone">Select Timezone</Label>
+                    <Label htmlFor="timezone" className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Timezone</Label>
                     <Select onValueChange={(value) => form.setValue("timezone", value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select Timezone" />
                       </SelectTrigger>
                       <SelectContent>
@@ -320,25 +278,21 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                   </div>
 
                   <div>
-                    <Label htmlFor="receivedTime">Set Received Time *</Label>
+                    <Label htmlFor="receivedTime" className="text-sm font-medium text-gray-700 dark:text-gray-300">Set Received Time *</Label>
                     <Input
                       type="datetime-local"
                       {...form.register("receivedTime")}
-                      className="w-full"
+                      className="mt-1"
                     />
                     {form.formState.errors.receivedTime && (
-                      <span className="text-sm text-red-500">
-                        {form.formState.errors.receivedTime.message}
-                      </span>
+                      <span className="text-sm text-red-500">{form.formState.errors.receivedTime.message}</span>
                     )}
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="portalName">Portal Name</Label>
+                    <Label htmlFor="portalName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Portal Name</Label>
                     <Select onValueChange={(value) => form.setValue("portalName", value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select Portal" />
                       </SelectTrigger>
                       <SelectContent>
@@ -350,55 +304,53 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                   </div>
 
                   <div>
-                    <Label htmlFor="companyName">Company Name *</Label>
+                    <Label htmlFor="companyName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Company Name *</Label>
                     <Input
                       {...form.register("companyName")}
                       placeholder="Choose..."
+                      className="mt-1"
                     />
                     {form.formState.errors.companyName && (
-                      <span className="text-sm text-red-500">
-                        {form.formState.errors.companyName.message}
-                      </span>
+                      <span className="text-sm text-red-500">{form.formState.errors.companyName.message}</span>
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* Homeowner Information */}
-                <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-700 dark:text-green-300 mb-3">
-                    Homeowner Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
+              {/* Homeowner Information and Map */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Homeowner Information - Takes 2/3 space */}
+                <div className="lg:col-span-2 bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+                  <h3 className="text-base font-medium text-green-800 dark:text-green-300 mb-4">Homeowner Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="customerName">Customer Name *</Label>
+                      <Label htmlFor="customerName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Name *</Label>
                       <Input
                         {...form.register("customerName")}
                         placeholder="Customer Name"
+                        className="mt-1"
                       />
                       {form.formState.errors.customerName && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.customerName.message}
-                        </span>
+                        <span className="text-sm text-red-500">{form.formState.errors.customerName.message}</span>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="customerEmail">Customer Email *</Label>
+                      <Label htmlFor="customerEmail" className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Email *</Label>
                       <Input
                         type="email"
                         {...form.register("customerEmail")}
                         placeholder="example@gmail.com"
+                        className="mt-1"
                       />
                       {form.formState.errors.customerEmail && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.customerEmail.message}
-                        </span>
+                        <span className="text-sm text-red-500">{form.formState.errors.customerEmail.message}</span>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="customerPhone">Customer Phone Number *</Label>
-                      <div className="flex">
+                      <Label htmlFor="customerPhone" className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Phone Number *</Label>
+                      <div className="flex gap-2 mt-1">
                         <Select defaultValue="+1">
                           <SelectTrigger className="w-20">
                             <SelectValue />
@@ -412,141 +364,163 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                         <Input
                           {...form.register("customerPhone")}
                           placeholder="Phone Number"
-                          className="flex-1 ml-2"
+                          className="flex-1"
                         />
                       </div>
                       {form.formState.errors.customerPhone && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.customerPhone.message}
-                        </span>
+                        <span className="text-sm text-red-500">{form.formState.errors.customerPhone.message}</span>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="siteAddress">Site Address as per utility bill *</Label>
-                      <Input
-                        {...form.register("siteAddress")}
-                        placeholder="Address"
-                      />
-                      {form.formState.errors.siteAddress && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.siteAddress.message}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="city" className="text-sm font-medium text-gray-700 dark:text-gray-300">City *</Label>
                       <Input
                         {...form.register("city")}
                         placeholder="City"
+                        className="mt-1"
                       />
                       {form.formState.errors.city && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.city.message}
-                        </span>
+                        <span className="text-sm text-red-500">{form.formState.errors.city.message}</span>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="state">State *</Label>
+                      <Label htmlFor="state" className="text-sm font-medium text-gray-700 dark:text-gray-300">State *</Label>
                       <Input
                         {...form.register("state")}
                         placeholder="State"
+                        className="mt-1"
                       />
                       {form.formState.errors.state && (
-                        <span className="text-sm text-red-500">
-                          {form.formState.errors.state.message}
-                        </span>
+                        <span className="text-sm text-red-500">{form.formState.errors.state.message}</span>
                       )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="apnNumber" className="text-sm font-medium text-gray-700 dark:text-gray-300">APN Number</Label>
+                      <Input
+                        {...form.register("apnNumber")}
+                        placeholder="Enter APN Number"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="siteAddress" className="text-sm font-medium text-gray-700 dark:text-gray-300">Site Address as per utility bill *</Label>
+                      <Input
+                        {...form.register("siteAddress")}
+                        placeholder="Address"
+                        className="mt-1"
+                      />
+                      {form.formState.errors.siteAddress && (
+                        <span className="text-sm text-red-500">{form.formState.errors.siteAddress.message}</span>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="coordinates" className="text-sm font-medium text-gray-700 dark:text-gray-300">Coordinates</Label>
+                      <Input
+                        {...form.register("coordinates")}
+                        placeholder="Click on the map to set coordinates"
+                        value={mapCoordinates}
+                        readOnly
+                        className="mt-1 bg-gray-50 dark:bg-gray-700"
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Map Section */}
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Button
-                    type="button"
-                    variant={mapCoordinates ? "default" : "outline"}
-                    size="sm"
-                  >
-                    Map
-                  </Button>
-                  <Button type="button" variant="outline" size="sm">
-                    Satellite
-                  </Button>
-                </div>
-                <div 
-                  className="w-full h-64 bg-green-100 dark:bg-green-900/20 rounded-lg cursor-pointer flex items-center justify-center"
-                  onClick={() => handleMapClick("37.7749,-122.4194")}
-                >
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 mx-auto mb-2 text-green-600" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Click on the map to set coordinates
-                    </p>
-                    {mapCoordinates && (
-                      <p className="text-xs text-green-600 mt-1">
-                        Coordinates: {mapCoordinates}
-                      </p>
-                    )}
+                {/* Map Section - Takes 1/3 space on the right */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Location Mapping</h4>
+                  <div className="flex gap-2 mb-3">
+                    <Button type="button" variant={mapCoordinates ? "default" : "outline"} size="sm">
+                      Map
+                    </Button>
+                    <Button type="button" variant="outline" size="sm">
+                      Satellite
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <div 
+                      className="w-full h-80 bg-green-100 dark:bg-green-900/20 rounded-lg cursor-pointer flex items-center justify-center border-2 border-dashed border-green-300 dark:border-green-600 hover:border-green-500 relative overflow-hidden"
+                      onClick={() => handleMapClick("37.7749,-122.4194")}
+                    >
+                      {/* Map Content */}
+                      <div className="text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Click on the map to set coordinates
+                        </p>
+                        {mapCoordinates && (
+                          <p className="text-xs text-green-600 mt-1">
+                            📍 {mapCoordinates}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Fullscreen Button */}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Add fullscreen functionality here
+                          console.log("Open fullscreen map");
+                        }}
+                      >
+                        <svg 
+                          className="w-4 h-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" 
+                          />
+                        </svg>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Step 2: Project Details */}
-          {currentStep === 2 && (
+            {/* Project Details Section */}
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="apnNumber">APN Number</Label>
-                  <Input
-                    {...form.register("apnNumber")}
-                    placeholder="Enter APN Number"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="coordinates">Coordinates</Label>
-                  <Input
-                    {...form.register("coordinates")}
-                    placeholder="Click on the map to set coordinates"
-                    value={mapCoordinates}
-                    readOnly
-                  />
-                </div>
-              </div>
-
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">Project Details</h2>
+              
               {/* Project Information */}
-              <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-green-700 dark:text-green-300 mb-3">
-                  Project Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+                <h3 className="text-base font-medium text-green-800 dark:text-green-300 mb-4">Project Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="authorityHavingJurisdiction">Authority Having Jurisdiction</Label>
+                    <Label htmlFor="authorityHavingJurisdiction" className="text-sm font-medium text-gray-700 dark:text-gray-300">Authority Having Jurisdiction</Label>
                     <Input
                       {...form.register("authorityHavingJurisdiction")}
                       placeholder="Enter AHJ"
+                      className="mt-1"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="utilityName">Utility Name</Label>
+                    <Label htmlFor="utilityName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Utility Name</Label>
                     <Input
                       {...form.register("utilityName")}
                       placeholder="Enter Utility"
+                      className="mt-1"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="mountType">Mount Type *</Label>
+                    <Label htmlFor="mountType" className="text-sm font-medium text-gray-700 dark:text-gray-300">Mount Type *</Label>
                     <Select onValueChange={(value) => form.setValue("mountType", value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="House Roof" />
                       </SelectTrigger>
                       <SelectContent>
@@ -558,196 +532,214 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                   </div>
 
                   <div>
-                    <Label htmlFor="addOnEquipments">Add-on Equipments</Label>
+                    <Label htmlFor="addOnEquipments" className="text-sm font-medium text-gray-700 dark:text-gray-300">Add-on Equipments</Label>
                     <Input
                       {...form.register("addOnEquipments")}
                       placeholder="None"
+                      className="mt-1"
                     />
                   </div>
 
-                  <div className="col-span-2">
-                    <Label htmlFor="governingCodes">Governing Codes</Label>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="governingCodes" className="text-sm font-medium text-gray-700 dark:text-gray-300">Governing Codes</Label>
                     <Textarea
                       {...form.register("governingCodes")}
                       placeholder="Enter any Governing comments here"
                       rows={3}
+                      className="mt-1 resize-none"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Property and Job Types */}
-              <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <Label className="text-base font-medium">Property Type *</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={form.watch("propertyType") === "residential" ? "default" : "outline"}
-                      className="bg-green-500 hover:bg-green-600"
-                      onClick={() => form.setValue("propertyType", "residential")}
-                    >
-                      Residential
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={form.watch("propertyType") === "commercial" ? "default" : "outline"}
-                      onClick={() => form.setValue("propertyType", "commercial")}
-                    >
-                      Commercial
-                    </Button>
+              {/* System Configuration */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">System Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">Property Type *</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={form.watch("propertyType") === "residential" ? "default" : "outline"}
+                        className="flex-1 h-10"
+                        onClick={() => form.setValue("propertyType", "residential")}
+                      >
+                        Residential
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.watch("propertyType") === "commercial" ? "default" : "outline"}
+                        className="flex-1 h-10"
+                        onClick={() => form.setValue("propertyType", "commercial")}
+                      >
+                        Commercial
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <Label className="text-base font-medium">Job Type *</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={form.watch("jobType") === "pv" ? "default" : "outline"}
-                      className="bg-green-500 hover:bg-green-600"
-                      onClick={() => form.setValue("jobType", "pv")}
-                    >
-                      PV
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={form.watch("jobType") === "pv+battery" ? "default" : "outline"}
-                      onClick={() => form.setValue("jobType", "pv+battery")}
-                    >
-                      PV+Battery
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={form.watch("jobType") === "battery" ? "default" : "outline"}
-                      onClick={() => form.setValue("jobType", "battery")}
-                    >
-                      Battery
-                    </Button>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">Job Type *</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant={form.watch("jobType") === "pv" ? "default" : "outline"}
+                        className="flex-1 h-10 text-xs"
+                        onClick={() => form.setValue("jobType", "pv")}
+                      >
+                        PV
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.watch("jobType") === "pv+battery" ? "default" : "outline"}
+                        className="flex-1 h-10 text-xs"
+                        onClick={() => form.setValue("jobType", "pv+battery")}
+                      >
+                        PV+Battery
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.watch("jobType") === "battery" ? "default" : "outline"}
+                        className="flex-1 h-10 text-xs"
+                        onClick={() => form.setValue("jobType", "battery")}
+                      >
+                        Battery
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <Label className="text-base font-medium">New Construction *</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={form.watch("newConstruction") === false ? "default" : "outline"}
-                      className="bg-green-500 hover:bg-green-600"
-                      onClick={() => form.setValue("newConstruction", false)}
-                    >
-                      No
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={form.watch("newConstruction") === true ? "default" : "outline"}
-                      onClick={() => form.setValue("newConstruction", true)}
-                    >
-                      Yes
-                    </Button>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">New Construction *</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={form.watch("newConstruction") === false ? "default" : "outline"}
+                        className="flex-1 h-10"
+                        onClick={() => form.setValue("newConstruction", false)}
+                      >
+                        No
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.watch("newConstruction") === true ? "default" : "outline"}
+                        className="flex-1 h-10"
+                        onClick={() => form.setValue("newConstruction", true)}
+                      >
+                        Yes
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Module and Inverter Information */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="moduleManufacturer">Module Manufacturer *</Label>
-                    <Select onValueChange={(value) => form.setValue("moduleManufacturer", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Manufacturer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Tesla">Tesla</SelectItem>
-                        <SelectItem value="SunPower">SunPower</SelectItem>
-                        <SelectItem value="LG">LG</SelectItem>
-                        <SelectItem value="Panasonic">Panasonic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Module Section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                  <h4 className="text-base font-medium text-blue-800 dark:text-blue-300 mb-4">Module Information</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="moduleManufacturer" className="text-sm font-medium text-gray-700 dark:text-gray-300">Module Manufacturer *</Label>
+                      <Select onValueChange={(value) => form.setValue("moduleManufacturer", value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select Manufacturer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Tesla">Tesla</SelectItem>
+                          <SelectItem value="SunPower">SunPower</SelectItem>
+                          <SelectItem value="LG">LG</SelectItem>
+                          <SelectItem value="Panasonic">Panasonic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="moduleModelNo">Module Model No. *</Label>
-                    <Select onValueChange={(value) => form.setValue("moduleModelNo", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Model No." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Model-A">Model-A</SelectItem>
-                        <SelectItem value="Model-B">Model-B</SelectItem>
-                        <SelectItem value="Model-C">Model-C</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div>
+                      <Label htmlFor="moduleModelNo" className="text-sm font-medium text-gray-700 dark:text-gray-300">Module Model No. *</Label>
+                      <Select onValueChange={(value) => form.setValue("moduleModelNo", value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select Model No." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Model-A">Model-A</SelectItem>
+                          <SelectItem value="Model-B">Model-B</SelectItem>
+                          <SelectItem value="Model-C">Model-C</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="moduleQuantity">Quantity *</Label>
-                    <Input
-                      type="number"
-                      {...form.register("moduleQuantity", { valueAsNumber: true })}
-                      placeholder="Enter Quantity"
-                    />
+                    <div>
+                      <Label htmlFor="moduleQuantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity *</Label>
+                      <Input
+                        type="number"
+                        {...form.register("moduleQuantity", { valueAsNumber: true })}
+                        placeholder="Enter Quantity"
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="inverterManufacturer">Inverter Manufacturer *</Label>
-                    <Select onValueChange={(value) => form.setValue("inverterManufacturer", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Manufacturer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Enphase">Enphase</SelectItem>
-                        <SelectItem value="SolarEdge">SolarEdge</SelectItem>
-                        <SelectItem value="Tesla">Tesla</SelectItem>
-                        <SelectItem value="SMA">SMA</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Inverter Section */}
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6">
+                  <h4 className="text-base font-medium text-purple-800 dark:text-purple-300 mb-4">Inverter Information</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="inverterManufacturer" className="text-sm font-medium text-gray-700 dark:text-gray-300">Inverter Manufacturer *</Label>
+                      <Select onValueChange={(value) => form.setValue("inverterManufacturer", value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select Manufacturer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Enphase">Enphase</SelectItem>
+                          <SelectItem value="SolarEdge">SolarEdge</SelectItem>
+                          <SelectItem value="Tesla">Tesla</SelectItem>
+                          <SelectItem value="SMA">SMA</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="inverterModelNo">Inverter Model No. *</Label>
-                    <Select onValueChange={(value) => form.setValue("inverterModelNo", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Model No." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="IQ7+">IQ7+</SelectItem>
-                        <SelectItem value="IQ8+">IQ8+</SelectItem>
-                        <SelectItem value="P300">P300</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div>
+                      <Label htmlFor="inverterModelNo" className="text-sm font-medium text-gray-700 dark:text-gray-300">Inverter Model No. *</Label>
+                      <Select onValueChange={(value) => form.setValue("inverterModelNo", value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select Model No." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="IQ7+">IQ7+</SelectItem>
+                          <SelectItem value="IQ8+">IQ8+</SelectItem>
+                          <SelectItem value="P300">P300</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div>
-                    <Label htmlFor="inverterQuantity">Quantity *</Label>
-                    <Input
-                      type="number"
-                      {...form.register("inverterQuantity", { valueAsNumber: true })}
-                      placeholder="Enter Quantity"
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="inverterQuantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity *</Label>
+                      <Input
+                        type="number"
+                        {...form.register("inverterQuantity", { valueAsNumber: true })}
+                        placeholder="Enter Quantity"
+                        className="mt-1"
+                      />
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label>Add Inverter</Label>
-                    <Button type="button" variant="outline" className="bg-green-500 hover:bg-green-600 text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      + Inverter
-                    </Button>
+                    <div className="flex items-center justify-between pt-2">
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Add Inverter</Label>
+                      <Button type="button" variant="outline" size="sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        + Inverter
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Solar System Question */}
-              <div>
-                <Label className="text-base font-medium">Do you have Existing Solar System?</Label>
-                <div className="flex gap-2 mt-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                <Label className="text-base font-medium text-gray-700 dark:text-gray-300 mb-3 block">Do you have Existing Solar System?</Label>
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant={form.watch("existingSolarSystem") === false ? "default" : "outline"}
-                    className="bg-green-500 hover:bg-green-600"
                     onClick={() => form.setValue("existingSolarSystem", false)}
                   >
                     No
@@ -762,21 +754,21 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Step 3: File Uploads */}
-          {currentStep === 3 && (
+            {/* File Uploads Section */}
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">File Uploads</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Proposal Design File */}
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">Proposal Design File</Label>
+                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
+                  <Label className="text-base font-medium text-amber-800 dark:text-amber-300 mb-4 block">Proposal Design File</Label>
                   <div 
-                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-green-500"
+                    className="border-2 border-dashed border-amber-300 dark:border-amber-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-500 hover:bg-amber-25"
                     onClick={() => document.getElementById('proposal-files')?.click()}
                   >
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
                       + click to add or<br />drop here
                     </p>
                   </div>
@@ -788,18 +780,20 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                     className="hidden"
                     onChange={(e) => handleFileUpload('proposal', e.target.files)}
                   />
-                  <p className="text-xs text-gray-500">{proposalFiles.length} files</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 text-center">
+                    {proposalFiles.length} files uploaded
+                  </p>
                 </div>
 
                 {/* Sitesurvey Attachments */}
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">Sitesurvey Attachments</Label>
+                <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-6">
+                  <Label className="text-base font-medium text-teal-800 dark:text-teal-300 mb-4 block">Sitesurvey Attachments</Label>
                   <div 
-                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-green-500"
+                    className="border-2 border-dashed border-teal-300 dark:border-teal-600 rounded-lg p-6 text-center cursor-pointer hover:border-teal-500 hover:bg-teal-25"
                     onClick={() => document.getElementById('sitesurvey-files')?.click()}
                   >
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-teal-600" />
+                    <p className="text-sm text-teal-700 dark:text-teal-300">
                       + click to add or<br />drop here
                     </p>
                   </div>
@@ -811,59 +805,53 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                     className="hidden"
                     onChange={(e) => handleFileUpload('sitesurvey', e.target.files)}
                   />
-                  <p className="text-xs text-gray-500">{sitesurveyFiles.length} files</p>
+                  <p className="text-xs text-teal-600 dark:text-teal-400 mt-2 text-center">
+                    {sitesurveyFiles.length} files uploaded
+                  </p>
                 </div>
 
                 {/* Additional Comments */}
-                <div className="space-y-4">
-                  <Label htmlFor="additionalComments">Additional Comments</Label>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                  <Label htmlFor="additionalComments" className="text-base font-medium text-gray-800 dark:text-gray-300 mb-4 block">Additional Comments</Label>
                   <Textarea
                     {...form.register("additionalComments")}
-                    placeholder="Enter any additional comments here"
-                    rows={8}
+                    placeholder="Enter any additional comments here..."
+                    rows={6}
                     className="resize-none"
                   />
                 </div>
               </div>
             </div>
-          )}
+          </form>
+        </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t">
-            <div>
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="text-red-600 border-red-600 hover:bg-red-50"
-              >
-                Cancel
-              </Button>
-              
-              {currentStep < 3 ? (
-                <Button type="button" onClick={nextStep} className="bg-green-500 hover:bg-green-600">
-                  Next
-                </Button>
-              ) : (
-                <Button 
-                  type="submit" 
-                  disabled={createPlansetMutation.isPending}
-                  className="bg-green-500 hover:bg-green-600"
-                >
-                  {createPlansetMutation.isPending ? "Saving..." : "Save"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
+        {/* Footer */}
+        <div className="bg-gray-50 dark:bg-gray-800 border-t px-6 py-4 flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="text-gray-600 border-gray-300 hover:bg-gray-100"
+          >
+            Cancel
+          </Button>
+          
+          <Button 
+            type="submit" 
+            disabled={createPlansetMutation.isPending}
+            onClick={form.handleSubmit(onSubmit)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {createPlansetMutation.isPending ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </div>
+            ) : (
+              "Save Planset"
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
