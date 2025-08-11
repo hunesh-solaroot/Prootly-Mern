@@ -133,7 +133,10 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
       
       if (!response.ok) {
         console.error("API error:", result);
-        throw new Error(result.message || 'Failed to create planset');
+        // Create a detailed error with the API response
+        const error = new Error(result.message || 'Failed to create planset');
+        (error as any).response = { data: result };
+        throw error;
       }
       return result;
     },
@@ -151,9 +154,19 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     },
     onError: (error: any) => {
       console.error("Mutation error:", error);
+      
+      // Try to extract detailed error information
+      let errorMessage = error?.message || "Failed to upload planset";
+      if (error?.response?.data?.errors) {
+        const fieldErrors = error.response.data.errors.map((err: any) => 
+          `${err.field}: ${err.message}`
+        ).join(', ');
+        errorMessage = `Validation errors: ${fieldErrors}`;
+      }
+      
       toast({
-        title: "Error",
-        description: error?.message || "Failed to upload planset",
+        title: "Upload Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -191,21 +204,40 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     console.log("Proposal files:", proposalFiles);
     console.log("Sitesurvey files:", sitesurveyFiles);
     
-    // Convert receivedTime string to Date and prepare data
+    // Ensure all required fields have values
     const submitData: any = {
-      ...data,
+      projectId: data.projectId || `planset-${Date.now()}`,
+      timezone: data.timezone || "PST",
       receivedTime: new Date(data.receivedTime),
+      portalName: data.portalName || "Main Portal",
+      companyName: data.companyName || "Solar Company",
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      siteAddress: data.siteAddress,
+      city: data.city,
+      state: data.state,
+      coordinates: data.coordinates || "",
+      apnNumber: data.apnNumber || "",
+      authorityHavingJurisdiction: data.authorityHavingJurisdiction || "",
+      utilityName: data.utilityName || "",
+      mountType: data.mountType,
+      addOnEquipments: data.addOnEquipments || "None",
+      governingCodes: data.governingCodes || "",
+      propertyType: data.propertyType,
+      jobType: data.jobType,
+      newConstruction: data.newConstruction || false,
+      moduleManufacturer: data.moduleManufacturer || "",
+      moduleModelNo: data.moduleModelNo || "",
+      moduleQuantity: data.moduleQuantity || 1,
+      inverterManufacturer: data.inverterManufacturer || "",
+      inverterModelNo: data.inverterModelNo || "",
+      inverterQuantity: data.inverterQuantity || 1,
+      existingSolarSystem: data.existingSolarSystem || false,
       proposalDesignFiles: proposalFiles,
       sitesurveyAttachments: sitesurveyFiles,
-      projectId: data.projectId || `planset-${Date.now()}`,
+      additionalComments: data.additionalComments || "",
     };
-    
-    // Remove undefined values to avoid validation issues
-    Object.keys(submitData).forEach(key => {
-      if (submitData[key] === undefined) {
-        delete submitData[key];
-      }
-    });
     
     console.log("Submit data:", submitData);
     createPlansetMutation.mutate(submitData);

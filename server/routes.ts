@@ -354,16 +354,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/plansets", async (req, res) => {
     try {
+      console.log("Received planset data:", req.body);
       const result = insertPlansetSchema.safeParse(req.body);
       if (!result.success) {
+        const errorDetails = result.error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message,
+          received: err.code === 'invalid_type' ? typeof (req.body as any)[err.path[0]] : (req.body as any)[err.path[0]]
+        }));
+        
+        console.log("Validation errors:", errorDetails);
         return res.status(400).json({ 
           message: "Invalid planset data", 
-          errors: result.error.errors 
+          errors: errorDetails,
+          details: result.error.errors
         });
       }
       const planset = await storage.createPlanset(result.data);
+      console.log("Created planset:", planset);
       res.status(201).json(planset);
     } catch (error) {
+      console.error("Server error:", error);
       res.status(500).json({ message: "Failed to create planset" });
     }
   });
