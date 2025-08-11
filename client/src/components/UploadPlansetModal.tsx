@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPin, Upload, Plus } from "lucide-react";
+import { GoogleMap } from "./GoogleMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,6 +76,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const [mapCoordinates, setMapCoordinates] = useState<string>("");
   const [proposalFiles, setProposalFiles] = useState<string[]>([]);
   const [sitesurveyFiles, setSitesurveyFiles] = useState<string[]>([]);
+  const [shouldUpdateMap, setShouldUpdateMap] = useState<boolean>(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -173,6 +175,35 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     setMapCoordinates(coordinates);
     form.setValue("coordinates", coordinates);
   };
+
+  const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    const coordinatesStr = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    setMapCoordinates(coordinatesStr);
+    form.setValue("coordinates", coordinatesStr);
+    
+    toast({
+      title: "Location Selected",
+      description: `Coordinates: ${coordinatesStr}`,
+    });
+  };
+
+  // Watch for address changes to update the map
+  const watchedAddress = form.watch("siteAddress");
+  const watchedCity = form.watch("city");
+  const watchedState = form.watch("state");
+
+  const fullAddress = `${watchedAddress}, ${watchedCity}, ${watchedState}`.replace(/^,\s*|,\s*$/g, '');
+  
+  // Debounced effect to update map when address changes
+  useEffect(() => {
+    if (fullAddress && fullAddress.length > 10) {
+      const timer = setTimeout(() => {
+        setShouldUpdateMap(prev => !prev);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [fullAddress]);
 
   const handleFileUpload = (type: 'proposal' | 'sitesurvey', files: FileList | null) => {
     if (!files) return;
@@ -442,50 +473,18 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                     </Button>
                   </div>
                   <div className="relative">
-                    <div 
-                      className="w-full h-80 bg-green-100 dark:bg-green-900/20 rounded-lg cursor-pointer flex items-center justify-center border-2 border-dashed border-green-300 dark:border-green-600 hover:border-green-500 relative overflow-hidden"
-                      onClick={() => handleMapClick("37.7749,-122.4194")}
-                    >
-                      {/* Map Content */}
-                      <div className="text-center">
-                        <MapPin className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Click on the map to set coordinates
-                        </p>
-                        {mapCoordinates && (
-                          <p className="text-xs text-green-600 mt-1">
-                            📍 {mapCoordinates}
-                          </p>
-                        )}
+                    <GoogleMap
+                      key={shouldUpdateMap ? 'updated' : 'initial'}
+                      address={fullAddress.length > 10 ? fullAddress : ''}
+                      coordinates={mapCoordinates}
+                      onLocationSelect={handleLocationSelect}
+                      height="320px"
+                    />
+                    {mapCoordinates && (
+                      <div className="absolute bottom-2 left-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
+                        📍 {mapCoordinates}
                       </div>
-                      
-                      {/* Fullscreen Button */}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Add fullscreen functionality here
-                          console.log("Open fullscreen map");
-                        }}
-                      >
-                        <svg 
-                          className="w-4 h-4" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" 
-                          />
-                        </svg>
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
