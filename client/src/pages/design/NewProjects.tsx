@@ -46,7 +46,7 @@ function Header({
   onExport: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-dark-bg border-b border-gray-200 dark:border-gray-600">
+    <div className="bg-white rounded-lg dark:bg-dark-bg border border-gray-200 dark:border-gray-600">
       {/* Mobile Layout */}
       <div className="block lg:hidden p-4 space-y-4">
         {/* Top Row - Title and Export */}
@@ -109,7 +109,7 @@ function Header({
           </button>
 
           {/* Status Filter */}
-          <div className="relative">
+          {/* <div className="relative">
             <select
               value={filters.status}
               onChange={(e) => onFiltersChange({
@@ -123,16 +123,16 @@ function Header({
               <option value="READY FOR DESIGN">Ready for Design</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
-          </div>
+          </div> */}
 
           {/* Export Button */}
-          <button
+          {/* <button
             onClick={onExport}
             className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-bg-light text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-bg-lighter flex items-center space-x-2 transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>Export</span>
-          </button>
+          </button> */}
         </div>
 
         <div className="flex items-center space-x-4">
