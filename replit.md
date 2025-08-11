@@ -4,6 +4,8 @@
 
 This is a full-stack CRM web application designed for a renewable energy company. The application is built with a React.js frontend, Express.js backend, and uses PostgreSQL with Drizzle ORM for data management. The system provides comprehensive management capabilities for employees, clients, projects, and team collaboration with a modern, responsive interface featuring a green/yellow gradient theme inspired by renewable energy branding.
 
+**Recent Migration (August 2025)**: Successfully migrated from Replit Agent to Replit environment with enhanced Google Maps integration for location-based planset uploads.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

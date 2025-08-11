@@ -176,14 +176,17 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     form.setValue("coordinates", coordinates);
   };
 
-  const handleLocationSelect = (lat: number, lng: number, address: string) => {
-    const coordinatesStr = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-    setMapCoordinates(coordinatesStr);
-    form.setValue("coordinates", coordinatesStr);
+  const handleLocationSelect = (locationData: { lat: number; lng: number; address: string; city: string; state: string; coordinates: string }) => {
+    // Update all form fields with the location data
+    setMapCoordinates(locationData.coordinates);
+    form.setValue("coordinates", locationData.coordinates);
+    form.setValue("siteAddress", locationData.address);
+    form.setValue("city", locationData.city);
+    form.setValue("state", locationData.state);
     
     toast({
       title: "Location Selected",
-      description: `Coordinates: ${coordinatesStr}`,
+      description: `Address: ${locationData.address}`,
     });
   };
 
@@ -204,6 +207,58 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
       return () => clearTimeout(timer);
     }
   }, [fullAddress]);
+
+  // Handle manual address changes to geocode and update coordinates
+  const handleAddressGeocoding = async (address: string) => {
+    if (!address || address.length < 10) return;
+    
+    try {
+      const geocoder = new (window as any).google.maps.Geocoder();
+      geocoder.geocode({ address }, (results: any, status: any) => {
+        if (status === 'OK' && results[0]) {
+          const result = results[0];
+          const location = result.geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+          const components = result.address_components;
+          
+          // Extract city and state from address components
+          let city = '';
+          let state = '';
+          
+          for (const component of components) {
+            const types = component.types;
+            
+            if (types.includes('locality')) {
+              city = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              state = component.short_name;
+            }
+          }
+          
+          // Auto-populate coordinates and location fields
+          const coordinatesStr = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+          setMapCoordinates(coordinatesStr);
+          form.setValue("coordinates", coordinatesStr);
+          
+          // Only update city and state if they're empty
+          if (!form.getValues("city") && city) {
+            form.setValue("city", city);
+          }
+          if (!form.getValues("state") && state) {
+            form.setValue("state", state);
+          }
+          
+          toast({
+            title: "Address Found",
+            description: `Coordinates updated: ${coordinatesStr}`,
+          });
+        }
+      });
+    } catch (error) {
+      console.log("Geocoding not available yet");
+    }
+  };
 
   const handleFileUpload = (type: 'proposal' | 'sitesurvey', files: FileList | null) => {
     if (!files) return;
@@ -442,6 +497,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                         {...form.register("siteAddress")}
                         placeholder="Address"
                         className="mt-1"
+                        onBlur={(e) => handleAddressGeocoding(e.target.value)}
                       />
                       {form.formState.errors.siteAddress && (
                         <span className="text-sm text-red-500">{form.formState.errors.siteAddress.message}</span>

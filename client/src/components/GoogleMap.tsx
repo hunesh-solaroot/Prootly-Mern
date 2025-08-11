@@ -2,10 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 
+interface LocationData {
+  lat: number;
+  lng: number;
+  address: string;
+  city: string;
+  state: string;
+  coordinates: string;
+}
+
 interface GoogleMapProps {
   address?: string;
   coordinates?: string;
-  onLocationSelect?: (lat: number, lng: number, address: string) => void;
+  onLocationSelect?: (locationData: LocationData) => void;
   className?: string;
   height?: string;
 }
@@ -29,6 +38,56 @@ export function GoogleMap({
   const [marker, setMarker] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // Process location data helper function
+  const processLocationData = (lat: number, lng: number) => {
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode(
+      { location: { lat, lng } },
+      (results: any, status: any) => {
+        if (status === 'OK' && results[0]) {
+          const result = results[0];
+          const components = result.address_components;
+          
+          // Extract city, state from address components
+          let city = '';
+          let state = '';
+          
+          for (const component of components) {
+            const types = component.types;
+            
+            if (types.includes('locality')) {
+              city = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              state = component.short_name; // Use short name for state (e.g., CA, NY)
+            }
+          }
+          
+          const locationData: LocationData = {
+            lat,
+            lng,
+            address: result.formatted_address,
+            city: city || '',
+            state: state || '',
+            coordinates: `${lat.toFixed(6)},${lng.toFixed(6)}`
+          };
+          
+          onLocationSelect?.(locationData);
+        } else {
+          const locationData: LocationData = {
+            lat,
+            lng,
+            address: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            city: '',
+            state: '',
+            coordinates: `${lat.toFixed(6)},${lng.toFixed(6)}`
+          };
+          
+          onLocationSelect?.(locationData);
+        }
+      }
+    );
+  };
 
   // Load Google Maps API
   useEffect(() => {
@@ -74,6 +133,8 @@ export function GoogleMap({
       fullscreenControl: true,
     });
 
+
+
     // Add click listener for coordinate selection
     newMap.addListener('click', (event: any) => {
       const lat = event.latLng.lat();
@@ -93,36 +154,13 @@ export function GoogleMap({
           const position = newMarker.getPosition();
           const newLat = position.lat();
           const newLng = position.lng();
-          
-          // Reverse geocode to get address
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode(
-            { location: { lat: newLat, lng: newLng } },
-            (results: any, status: any) => {
-              if (status === 'OK' && results[0]) {
-                onLocationSelect?.(newLat, newLng, results[0].formatted_address);
-              } else {
-                onLocationSelect?.(newLat, newLng, `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
-              }
-            }
-          );
+          processLocationData(newLat, newLng);
         });
         
         setMarker(newMarker);
       }
       
-      // Reverse geocode to get address
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode(
-        { location: { lat, lng } },
-        (results: any, status: any) => {
-          if (status === 'OK' && results[0]) {
-            onLocationSelect?.(lat, lng, results[0].formatted_address);
-          } else {
-            onLocationSelect?.(lat, lng, `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-          }
-        }
-      );
+      processLocationData(lat, lng);
     });
 
     setMap(newMap);
@@ -154,18 +192,7 @@ export function GoogleMap({
             const markerPosition = newMarker.getPosition();
             const newLat = markerPosition.lat();
             const newLng = markerPosition.lng();
-            
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode(
-              { location: { lat: newLat, lng: newLng } },
-              (results: any, status: any) => {
-                if (status === 'OK' && results[0]) {
-                  onLocationSelect?.(newLat, newLng, results[0].formatted_address);
-                } else {
-                  onLocationSelect?.(newLat, newLng, `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
-                }
-              }
-            );
+            processLocationData(newLat, newLng);
           });
           
           setMarker(newMarker);
@@ -197,23 +224,39 @@ export function GoogleMap({
               const newLat = markerPosition.lat();
               const newLng = markerPosition.lng();
               
-              const geocoder = new window.google.maps.Geocoder();
-              geocoder.geocode(
-                { location: { lat: newLat, lng: newLng } },
-                (results: any, status: any) => {
-                  if (status === 'OK' && results[0]) {
-                    onLocationSelect?.(newLat, newLng, results[0].formatted_address);
-                  } else {
-                    onLocationSelect?.(newLat, newLng, `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
-                  }
-                }
-              );
+              processLocationData(newLat, newLng);
             });
             
             setMarker(newMarker);
           }
           
-          onLocationSelect?.(lat, lng, results[0].formatted_address);
+          // Extract location data from geocoded result
+          const result = results[0];
+          const components = result.address_components;
+          
+          let city = '';
+          let state = '';
+          
+          for (const component of components) {
+            const types = component.types;
+            
+            if (types.includes('locality')) {
+              city = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              state = component.short_name;
+            }
+          }
+          
+          const locationData: LocationData = {
+            lat,
+            lng,
+            address: result.formatted_address,
+            city: city || '',
+            state: state || '',
+            coordinates: `${lat.toFixed(6)},${lng.toFixed(6)}`
+          };
+          
+          onLocationSelect?.(locationData);
         } else {
           setError('Address not found');
         }
