@@ -177,7 +177,7 @@ export function GoogleMap({
       if (!isNaN(lat) && !isNaN(lng)) {
         const position = { lat, lng };
         map.setCenter(position);
-        map.setZoom(16);
+        map.setZoom(18); // Increased zoom level for closer view of coordinates
         
         if (marker) {
           marker.setPosition(position);
@@ -207,8 +207,27 @@ export function GoogleMap({
           const lat = location.lat();
           const lng = location.lng();
           
+          // Determine zoom level based on location type
+          const geocodeResult = results[0];
+          let zoomLevel = 18; // Default high zoom for specific addresses
+          
+          // Check if it's a specific building/home address vs general area
+          const hasStreetNumber = geocodeResult.address_components.some((component: any) => 
+            component.types.includes('street_number')
+          );
+          
+          if (hasStreetNumber) {
+            zoomLevel = 19; // Very close zoom for specific house/building addresses
+          } else {
+            // Check for premise or subpremise (specific building within complex)
+            const hasPremise = geocodeResult.address_components.some((component: any) => 
+              component.types.includes('premise') || component.types.includes('subpremise')
+            );
+            zoomLevel = hasPremise ? 18 : 16; // Closer for buildings, moderate for general areas
+          }
+          
           map.setCenter({ lat, lng });
-          map.setZoom(16);
+          map.setZoom(zoomLevel);
           
           if (marker) {
             marker.setPosition({ lat, lng });
@@ -231,8 +250,8 @@ export function GoogleMap({
           }
           
           // Extract location data from geocoded result
-          const result = results[0];
-          const components = result.address_components;
+          const addressResult = results[0];
+          const components = addressResult.address_components;
           
           let city = '';
           let state = '';
@@ -250,7 +269,7 @@ export function GoogleMap({
           const locationData: LocationData = {
             lat,
             lng,
-            address: result.formatted_address,
+            address: addressResult.formatted_address,
             city: city || '',
             state: state || '',
             coordinates: `${lat.toFixed(6)},${lng.toFixed(6)}`
