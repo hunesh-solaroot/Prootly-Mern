@@ -88,3 +88,29 @@
 .gradient-green-600 {
   background: linear-gradient(135deg, hsl(142.1, 76.2%, 36.3%) 0%, hsl(142.1, 76.2%, 46.3%) 100%);
 }
+/* Add these to your existing styles */
+.resize-handle { 
+  position: absolute; 
+  top: 0; 
+  right: -2px; 
+  width: 10px; 
+  height: 100%; 
+  cursor: col-resize; 
+  z-index: 20; 
+}
+
+.resize-line { 
+  position: fixed; 
+  top: 240px; 
+  bottom: 0; 
+  width: 2px; 
+  background: #007bff; 
+  z-index: 10; 
+  opacity: 0; 
+  pointer-events: none; 
+  transition: opacity .1s; 
+}
+
+.resize-line.active { 
+  opacity: 1; 
+}
