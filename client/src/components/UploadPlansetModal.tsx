@@ -26,12 +26,39 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertPlansetSchema, type InsertPlanset } from "@shared/schema";
 
-// Extended schema for form validation with additional rules
-const plansetFormSchema = insertPlansetSchema.extend({
+// Create a simplified form schema that matches the database requirements
+const plansetFormSchema = z.object({
+  projectId: z.string().optional(),
+  timezone: z.string().optional(),
   receivedTime: z.string().min(1, "Received time is required"),
+  portalName: z.string().optional(),
+  companyName: z.string().min(1, "Company name is required"),
+  customerName: z.string().min(1, "Customer name is required"),
+  customerEmail: z.string().email("Valid email is required"),
   customerPhone: z.string().min(10, "Phone number must be at least 10 digits"),
-  moduleQuantity: z.number().min(1, "Module quantity must be at least 1"),
-  inverterQuantity: z.number().min(1, "Inverter quantity must be at least 1"),
+  siteAddress: z.string().min(1, "Site address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  coordinates: z.string().optional(),
+  apnNumber: z.string().optional(),
+  authorityHavingJurisdiction: z.string().optional(),
+  utilityName: z.string().optional(),
+  mountType: z.string().min(1, "Mount type is required"),
+  addOnEquipments: z.string().optional(),
+  governingCodes: z.string().optional(),
+  propertyType: z.string().min(1, "Property type is required"),
+  jobType: z.string().min(1, "Job type is required"),
+  newConstruction: z.boolean().default(false),
+  moduleManufacturer: z.string().optional(),
+  moduleModelNo: z.string().optional(),
+  moduleQuantity: z.number().min(1, "Module quantity must be at least 1").optional(),
+  inverterManufacturer: z.string().optional(),
+  inverterModelNo: z.string().optional(),
+  inverterQuantity: z.number().min(1, "Inverter quantity must be at least 1").optional(),
+  existingSolarSystem: z.boolean().default(false),
+  proposalDesignFiles: z.array(z.string()).optional(),
+  sitesurveyAttachments: z.array(z.string()).optional(),
+  additionalComments: z.string().optional(),
 });
 
 type PlansetFormData = z.infer<typeof plansetFormSchema> & {
@@ -91,7 +118,8 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   });
 
   const createPlansetMutation = useMutation({
-    mutationFn: async (data: InsertPlanset) => {
+    mutationFn: async (data: any) => {
+      console.log("Sending data to API:", data);
       const response = await fetch('/api/plansets', {
         method: "POST",
         headers: {
@@ -99,19 +127,30 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
         },
         body: JSON.stringify(data),
       });
+      
+      const result = await response.json();
+      console.log("API response:", result);
+      
       if (!response.ok) {
-        throw new Error('Failed to create planset');
+        console.error("API error:", result);
+        throw new Error(result.message || 'Failed to create planset');
       }
-      return response.json();
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Planset created successfully:", data);
       toast({ title: "Success", description: "Planset uploaded successfully!" });
       queryClient.invalidateQueries({ queryKey: ["/api/plansets"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/plansets`] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/plansets`] });
+      }
       onClose();
       form.reset();
+      setProposalFiles([]);
+      setSitesurveyFiles([]);
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
         description: error?.message || "Failed to upload planset",
@@ -128,27 +167,47 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const handleFileUpload = (type: 'proposal' | 'sitesurvey', files: FileList | null) => {
     if (!files) return;
     
-    // Mock file upload - in real app, upload to server
-    const fileNames = Array.from(files).map(file => `uploads/${file.name}`);
+    // For development, simulate file upload with file names
+    const fileNames = Array.from(files).map(file => `uploads/${Date.now()}-${file.name}`);
     
     if (type === 'proposal') {
-      setProposalFiles(prev => [...prev, ...fileNames]);
-      form.setValue("proposalDesignFiles", [...proposalFiles, ...fileNames]);
+      const updatedFiles = [...proposalFiles, ...fileNames];
+      setProposalFiles(updatedFiles);
+      form.setValue("proposalDesignFiles", updatedFiles);
     } else {
-      setSitesurveyFiles(prev => [...prev, ...fileNames]);
-      form.setValue("sitesurveyAttachments", [...sitesurveyFiles, ...fileNames]);
+      const updatedFiles = [...sitesurveyFiles, ...fileNames];
+      setSitesurveyFiles(updatedFiles);
+      form.setValue("sitesurveyAttachments", updatedFiles);
     }
+    
+    toast({
+      title: "Files uploaded",
+      description: `${files.length} file(s) added successfully`,
+    });
   };
 
   const onSubmit = (data: PlansetFormData) => {
-    // Convert receivedTime string to Date
-    const submitData: InsertPlanset = {
+    console.log("Form data:", data);
+    console.log("Proposal files:", proposalFiles);
+    console.log("Sitesurvey files:", sitesurveyFiles);
+    
+    // Convert receivedTime string to Date and prepare data
+    const submitData: any = {
       ...data,
       receivedTime: new Date(data.receivedTime),
       proposalDesignFiles: proposalFiles,
       sitesurveyAttachments: sitesurveyFiles,
+      projectId: data.projectId || `planset-${Date.now()}`,
     };
     
+    // Remove undefined values to avoid validation issues
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined) {
+        delete submitData[key];
+      }
+    });
+    
+    console.log("Submit data:", submitData);
     createPlansetMutation.mutate(submitData);
   };
 

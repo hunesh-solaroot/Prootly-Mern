@@ -24,18 +24,53 @@ export default function NewProjectsPage() {
 
   // --- DATA FETCHING ---
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
       try {
-        setAllProjects(generateMockProjects(50));
+        // First try to get real plansets from API
+        const response = await fetch('/api/plansets');
+        if (response.ok) {
+          const plansets = await response.json();
+          console.log("Fetched plansets:", plansets);
+          
+          // Convert plansets to IPlanset format for display
+          const convertedProjects: IPlanset[] = plansets.map((planset: any) => ({
+            id: planset.id,
+            customer: {
+              name: planset.customerName,
+              type: planset.propertyType === 'residential' ? 'Residential' : 'Commercial',
+              address: `${planset.siteAddress}, ${planset.city}, ${planset.state}`,
+              initials: planset.customerName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase(),
+              color: '#10B981'
+            },
+            projectDetails: planset.jobType.toUpperCase(),
+            keyDates: {
+              created: new Date(planset.createdAt).toLocaleDateString(),
+              received: planset.receivedTime ? new Date(planset.receivedTime).toLocaleDateString() : new Date(planset.createdAt).toLocaleDateString()
+            },
+            status: 'IN PROGRESS' as const,
+            assignedTo: null,
+            countdown: '02:00:00',
+            autoComplete: 'Auto-Complete',
+            priority: 'HIGH' as const
+          }));
+          
+          // Mix with mock data for demonstration
+          setAllProjects([...convertedProjects, ...generateMockProjects(10)]);
+        } else {
+          // Fallback to mock data
+          setAllProjects(generateMockProjects(50));
+        }
         setError(null);
       } catch (err) {
-        setError("Failed to generate mock data.");
-        console.error(err);
+        console.error("Failed to fetch projects:", err);
+        setError("Failed to load projects.");
       } finally {
         setLoading(false);
       }
-    }, 1000);
+    };
+    
+    fetchProjects();
   }, []);
 
   // --- FILTERING & SORTING LOGIC ---
