@@ -208,7 +208,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     const submitData: any = {
       projectId: data.projectId || `planset-${Date.now()}`,
       timezone: data.timezone || "PST",
-      receivedTime: new Date(data.receivedTime),
+      receivedTime: data.receivedTime, // Keep as string, server will handle conversion
       portalName: data.portalName || "Main Portal",
       companyName: data.companyName || "Solar Company",
       customerName: data.customerName,

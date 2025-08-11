@@ -59,7 +59,7 @@ export const plansets = pgTable("plansets", {
   
   // Timezone and Time Info
   timezone: text("timezone"),
-  receivedTime: timestamp("received_time"),
+  receivedTime: text("received_time"), // Changed to text to accept string input
   portalName: text("portal_name"),
   companyName: text("company_name").notNull(),
   
@@ -152,6 +152,8 @@ export const insertPlansetSchema = createInsertSchema(plansets).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  receivedTime: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
