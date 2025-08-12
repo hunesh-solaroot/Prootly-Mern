@@ -31,7 +31,7 @@ export function GoogleMap({
   coordinates, 
   onLocationSelect, 
   className = '',
-  height = '320px'
+  height = '380px'
 }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
@@ -126,7 +126,7 @@ export function GoogleMap({
     const defaultLocation = { lat: 37.7749, lng: -122.4194 }; // San Francisco
     
     const newMap = new window.google.maps.Map(mapRef.current, {
-      zoom: 13,
+      zoom: 100,
       center: defaultLocation,
       mapTypeControl: true,
       streetViewControl: true,
@@ -209,7 +209,7 @@ export function GoogleMap({
           
           // Determine zoom level based on location type
           const geocodeResult = results[0];
-          let zoomLevel = 18; // Default high zoom for specific addresses
+          let zoomLevel = 50; // Default high zoom for specific addresses
           
           // Check if it's a specific building/home address vs general area
           const hasStreetNumber = geocodeResult.address_components.some((component: any) => 
@@ -217,13 +217,13 @@ export function GoogleMap({
           );
           
           if (hasStreetNumber) {
-            zoomLevel = 19; // Very close zoom for specific house/building addresses
+            zoomLevel = 50; // Very close zoom for specific house/building addresses
           } else {
             // Check for premise or subpremise (specific building within complex)
             const hasPremise = geocodeResult.address_components.some((component: any) => 
               component.types.includes('premise') || component.types.includes('subpremise')
             );
-            zoomLevel = hasPremise ? 18 : 16; // Closer for buildings, moderate for general areas
+            zoomLevel = hasPremise ? 50 : 40; // Closer for buildings, moderate for general areas
           }
           
           map.setCenter({ lat, lng });

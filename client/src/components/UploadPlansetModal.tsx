@@ -77,7 +77,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const [proposalFiles, setProposalFiles] = useState<string[]>([]);
   const [sitesurveyFiles, setSitesurveyFiles] = useState<string[]>([]);
   const [shouldUpdateMap, setShouldUpdateMap] = useState<boolean>(false);
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -128,10 +128,10 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
         },
         body: JSON.stringify(data),
       });
-      
+
       const result = await response.json();
       console.log("API response:", result);
-      
+
       if (!response.ok) {
         console.error("API error:", result);
         const error = new Error(result.message || 'Failed to create planset');
@@ -154,15 +154,15 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     },
     onError: (error: any) => {
       console.error("Mutation error:", error);
-      
+
       let errorMessage = error?.message || "Failed to upload planset";
       if (error?.response?.data?.errors) {
-        const fieldErrors = error.response.data.errors.map((err: any) => 
+        const fieldErrors = error.response.data.errors.map((err: any) =>
           `${err.field}: ${err.message}`
         ).join(', ');
         errorMessage = `Validation errors: ${fieldErrors}`;
       }
-      
+
       toast({
         title: "Upload Failed",
         description: errorMessage,
@@ -183,7 +183,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     form.setValue("siteAddress", locationData.address);
     form.setValue("city", locationData.city);
     form.setValue("state", locationData.state);
-    
+
     toast({
       title: "Location Selected",
       description: `Address: ${locationData.address}`,
@@ -196,14 +196,14 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   const watchedState = form.watch("state");
 
   const fullAddress = `${watchedAddress}, ${watchedCity}, ${watchedState}`.replace(/^,\s*|,\s*$/g, '');
-  
+
   // Debounced effect to update map when address changes
   useEffect(() => {
     if (fullAddress && fullAddress.length > 10) {
       const timer = setTimeout(() => {
         setShouldUpdateMap(prev => !prev);
       }, 1000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [fullAddress]);
@@ -211,7 +211,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   // Handle manual address changes to geocode and update coordinates
   const handleAddressGeocoding = async (address: string) => {
     if (!address || address.length < 10) return;
-    
+
     try {
       const geocoder = new (window as any).google.maps.Geocoder();
       geocoder.geocode({ address }, (results: any, status: any) => {
@@ -221,26 +221,26 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
           const lat = location.lat();
           const lng = location.lng();
           const components = result.address_components;
-          
+
           // Extract city and state from address components
           let city = '';
           let state = '';
-          
+
           for (const component of components) {
             const types = component.types;
-            
+
             if (types.includes('locality')) {
               city = component.long_name;
             } else if (types.includes('administrative_area_level_1')) {
               state = component.short_name;
             }
           }
-          
+
           // Auto-populate coordinates and location fields
           const coordinatesStr = `${lat.toFixed(6)},${lng.toFixed(6)}`;
           setMapCoordinates(coordinatesStr);
           form.setValue("coordinates", coordinatesStr);
-          
+
           // Only update city and state if they're empty
           if (!form.getValues("city") && city) {
             form.setValue("city", city);
@@ -248,7 +248,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
           if (!form.getValues("state") && state) {
             form.setValue("state", state);
           }
-          
+
           toast({
             title: "Address Found",
             description: `Coordinates updated: ${coordinatesStr}`,
@@ -262,9 +262,9 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
 
   const handleFileUpload = (type: 'proposal' | 'sitesurvey', files: FileList | null) => {
     if (!files) return;
-    
+
     const fileNames = Array.from(files).map(file => `uploads/${Date.now()}-${file.name}`);
-    
+
     if (type === 'proposal') {
       const updatedFiles = [...proposalFiles, ...fileNames];
       setProposalFiles(updatedFiles);
@@ -274,7 +274,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
       setSitesurveyFiles(updatedFiles);
       form.setValue("sitesurveyAttachments", updatedFiles);
     }
-    
+
     toast({
       title: "Files uploaded",
       description: `${files.length} file(s) added successfully`,
@@ -285,7 +285,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
     console.log("Form data:", data);
     console.log("Proposal files:", proposalFiles);
     console.log("Sitesurvey files:", sitesurveyFiles);
-    
+
     const submitData: any = {
       projectId: data.projectId || `planset-${Date.now()}`,
       timezone: data.timezone || "PST",
@@ -319,7 +319,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
       sitesurveyAttachments: sitesurveyFiles,
       additionalComments: data.additionalComments || "",
     };
-    
+
     console.log("Submit data:", submitData);
     createPlansetMutation.mutate(submitData);
   };
@@ -327,7 +327,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] h-[90vh] overflow-hidden p-0 bg-white dark:bg-gray-900">
-        
+
         {/* Header */}
         <DialogHeader className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -339,11 +339,11 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
         {/* Scrollable Form Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
+
             {/* Basic Information Section */}
             <div className="space-y-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">Basic Information</h2>
-              
+
               {/* System Configuration */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
                 <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-4">System Configuration</h3>
@@ -382,9 +382,12 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                         <SelectValue placeholder="Select Portal" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Aurora Portal">Aurora Portal</SelectItem>
-                        <SelectItem value="Helioscope Portal">Helioscope Portal</SelectItem>
-                        <SelectItem value="PVDesign Portal">PVDesign Portal</SelectItem>
+                        <SelectItem value="Posigen">Posigen</SelectItem>
+                        <SelectItem value="Test">Test</SelectItem>
+                        <SelectItem value="SES">SES</SelectItem>
+                        <SelectItem value="PEGASUS">PEGASUS</SelectItem>
+                        <SelectItem value="CRE">CRE</SelectItem>
+                        
                       </SelectContent>
                     </Select>
                   </div>
@@ -404,9 +407,9 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
               </div>
 
               {/* Homeowner Information and Map */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
                 {/* Homeowner Information - Takes 2/3 space */}
-                <div className="lg:col-span-2 bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+                <div className="lg:col-span-3 bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                   <h3 className="text-base font-medium text-green-800 dark:text-green-300 mb-4">Homeowner Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -518,23 +521,16 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                 </div>
 
                 {/* Map Section - Takes 1/3 space on the right */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div className="bg-gray-50 lg:col-span-3 dark:bg-gray-800 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Location Mapping</h4>
-                  <div className="flex gap-2 mb-3">
-                    <Button type="button" variant={mapCoordinates ? "default" : "outline"} size="sm">
-                      Map
-                    </Button>
-                    <Button type="button" variant="outline" size="sm">
-                      Satellite
-                    </Button>
-                  </div>
+
                   <div className="relative">
                     <GoogleMap
                       key={shouldUpdateMap ? 'updated' : 'initial'}
                       address={fullAddress.length > 10 ? fullAddress : ''}
                       coordinates={mapCoordinates}
                       onLocationSelect={handleLocationSelect}
-                      height="320px"
+                      height="430px"
                     />
                     {mapCoordinates && (
                       <div className="absolute bottom-2 left-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
@@ -549,11 +545,11 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
             {/* Project Details Section */}
             <div className="space-y-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">Project Details</h2>
-              
+
               {/* Project Information */}
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                 <h3 className="text-base font-medium text-green-800 dark:text-green-300 mb-4">Project Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="authorityHavingJurisdiction" className="text-sm font-medium text-gray-700 dark:text-gray-300">Authority Having Jurisdiction</Label>
                     <Input
@@ -582,6 +578,8 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                         <SelectItem value="House Roof">House Roof</SelectItem>
                         <SelectItem value="Ground Mount">Ground Mount</SelectItem>
                         <SelectItem value="Carport">Carport</SelectItem>
+                        <SelectItem value="House Roof + Ground Mount">House Roof + Ground Mount</SelectItem>
+                        <SelectItem value="Mobile Home">Mobile Home</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -594,18 +592,21 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                       className="mt-1"
                     />
                   </div>
-
-                  <div className="md:col-span-2">
+                </div>
+                {/* Text area for Governing code */}
+                <div className="grid grid-cols-1 mt-4 md:grid-cols-3 gap-4">
+                  <div>
                     <Label htmlFor="governingCodes" className="text-sm font-medium text-gray-700 dark:text-gray-300">Governing Codes</Label>
                     <Textarea
                       {...form.register("governingCodes")}
                       placeholder="Enter any Governing comments here"
                       rows={3}
-                      className="mt-1 resize-none"
-                    />
-                  </div>
+                      className="mt-1 resize-none "
+                    /></div>
                 </div>
+
               </div>
+
 
               {/* System Configuration */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
@@ -813,12 +814,12 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
             {/* File Uploads Section */}
             <div className="space-y-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2">File Uploads</h2>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Proposal Design File */}
                 <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-6">
                   <Label className="text-base font-medium text-amber-800 dark:text-amber-300 mb-4 block">Proposal Design File</Label>
-                  <div 
+                  <div
                     className="border-2 border-dashed border-amber-300 dark:border-amber-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-500 hover:bg-amber-25"
                     onClick={() => document.getElementById('proposal-files')?.click()}
                   >
@@ -843,7 +844,7 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
                 {/* Sitesurvey Attachments */}
                 <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-6">
                   <Label className="text-base font-medium text-teal-800 dark:text-teal-300 mb-4 block">Sitesurvey Attachments</Label>
-                  <div 
+                  <div
                     className="border-2 border-dashed border-teal-300 dark:border-teal-600 rounded-lg p-6 text-center cursor-pointer hover:border-teal-500 hover:bg-teal-25"
                     onClick={() => document.getElementById('sitesurvey-files')?.click()}
                   >
@@ -890,9 +891,9 @@ export function UploadPlansetModal({ isOpen, onClose, projectId }: UploadPlanset
           >
             Cancel
           </Button>
-          
-          <Button 
-            type="submit" 
+
+          <Button
+            type="submit"
             disabled={createPlansetMutation.isPending}
             onClick={form.handleSubmit(onSubmit)}
             className="bg-green-600 hover:bg-green-700 text-white"
