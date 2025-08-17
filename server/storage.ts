@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Employee, type InsertEmployee, type Client, type InsertClient, type Project, type InsertProject, type Comment, type InsertComment, type Planset, type InsertPlanset } from "@shared/schema";
+import { type User, type InsertUser, type Employee, type InsertEmployee, type Client, type InsertClient, type Project, type InsertProject, type Comment, type InsertComment, type Planset, type InsertPlanset, type Attendance, type InsertAttendance, type LeaveRequest, type InsertLeaveRequest, type Department, type InsertDepartment, type Payroll, type InsertPayroll } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -38,6 +38,37 @@ export interface IStorage {
   createPlanset(planset: InsertPlanset): Promise<Planset>;
   updatePlanset(id: string, planset: Partial<InsertPlanset>): Promise<Planset | undefined>;
   deletePlanset(id: string): Promise<boolean>;
+
+  // Attendance methods
+  getAttendance(): Promise<Attendance[]>;
+  getAttendanceByEmployee(employeeId: string): Promise<Attendance[]>;
+  getAttendanceByDate(date: string): Promise<Attendance[]>;
+  getTodayAttendance(employeeId: string): Promise<Attendance | undefined>;
+  createAttendance(attendance: InsertAttendance): Promise<Attendance>;
+  updateAttendance(id: string, attendance: Partial<InsertAttendance>): Promise<Attendance | undefined>;
+  punchIn(employeeId: string): Promise<Attendance>;
+  punchOut(employeeId: string): Promise<Attendance | undefined>;
+
+  // Leave Request methods
+  getLeaveRequests(): Promise<LeaveRequest[]>;
+  getLeaveRequestsByEmployee(employeeId: string): Promise<LeaveRequest[]>;
+  createLeaveRequest(request: InsertLeaveRequest): Promise<LeaveRequest>;
+  updateLeaveRequest(id: string, request: Partial<InsertLeaveRequest>): Promise<LeaveRequest | undefined>;
+  approveLeaveRequest(id: string, approvedBy: string): Promise<LeaveRequest | undefined>;
+  rejectLeaveRequest(id: string, approvedBy: string, comments?: string): Promise<LeaveRequest | undefined>;
+
+  // Department methods
+  getDepartments(): Promise<Department[]>;
+  getDepartment(id: string): Promise<Department | undefined>;
+  createDepartment(department: InsertDepartment): Promise<Department>;
+  updateDepartment(id: string, department: Partial<InsertDepartment>): Promise<Department | undefined>;
+  deleteDepartment(id: string): Promise<boolean>;
+
+  // Payroll methods
+  getPayroll(): Promise<Payroll[]>;
+  getPayrollByEmployee(employeeId: string): Promise<Payroll[]>;
+  createPayroll(payroll: InsertPayroll): Promise<Payroll>;
+  updatePayroll(id: string, payroll: Partial<InsertPayroll>): Promise<Payroll | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -47,6 +78,10 @@ export class MemStorage implements IStorage {
   private projects: Map<string, Project>;
   private comments: Map<string, Comment>;
   private plansets: Map<string, Planset>;
+  private attendance: Map<string, Attendance>;
+  private leaveRequests: Map<string, LeaveRequest>;
+  private departments: Map<string, Department>;
+  private payroll: Map<string, Payroll>;
 
   constructor() {
     this.users = new Map();
@@ -55,6 +90,10 @@ export class MemStorage implements IStorage {
     this.projects = new Map();
     this.comments = new Map();
     this.plansets = new Map();
+    this.attendance = new Map();
+    this.leaveRequests = new Map();
+    this.departments = new Map();
+    this.payroll = new Map();
 
     // Initialize with some sample data
     this.initializeSampleData();
@@ -362,6 +401,234 @@ export class MemStorage implements IStorage {
 
   async deletePlanset(id: string): Promise<boolean> {
     return this.plansets.delete(id);
+  }
+
+  // Attendance methods
+  async getAttendance(): Promise<Attendance[]> {
+    return Array.from(this.attendance.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }
+
+  async getAttendanceByEmployee(employeeId: string): Promise<Attendance[]> {
+    return Array.from(this.attendance.values())
+      .filter(att => att.employeeId === employeeId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getAttendanceByDate(date: string): Promise<Attendance[]> {
+    return Array.from(this.attendance.values()).filter(att => att.date === date);
+  }
+
+  async getTodayAttendance(employeeId: string): Promise<Attendance | undefined> {
+    const today = new Date().toISOString().split('T')[0];
+    return Array.from(this.attendance.values()).find(
+      att => att.employeeId === employeeId && att.date === today
+    );
+  }
+
+  async createAttendance(insertAttendance: InsertAttendance): Promise<Attendance> {
+    const id = randomUUID();
+    const now = new Date();
+    const attendance: Attendance = {
+      ...insertAttendance,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      workingHours: insertAttendance.workingHours || 0,
+      notes: insertAttendance.notes || null,
+      punchIn: insertAttendance.punchIn || null,
+      punchOut: insertAttendance.punchOut || null,
+    };
+    this.attendance.set(id, attendance);
+    return attendance;
+  }
+
+  async updateAttendance(id: string, updates: Partial<InsertAttendance>): Promise<Attendance | undefined> {
+    const attendance = this.attendance.get(id);
+    if (!attendance) return undefined;
+    
+    const updatedAttendance = { 
+      ...attendance, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.attendance.set(id, updatedAttendance);
+    return updatedAttendance;
+  }
+
+  async punchIn(employeeId: string): Promise<Attendance> {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const punchInTime = now.toTimeString().substring(0, 5); // HH:MM format
+    
+    // Check if already punched in today
+    const existingAttendance = await this.getTodayAttendance(employeeId);
+    if (existingAttendance) {
+      throw new Error("Already punched in today");
+    }
+
+    const attendance: InsertAttendance = {
+      employeeId,
+      date: today,
+      punchIn: punchInTime,
+      status: "present",
+    };
+
+    return this.createAttendance(attendance);
+  }
+
+  async punchOut(employeeId: string): Promise<Attendance | undefined> {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const punchOutTime = now.toTimeString().substring(0, 5); // HH:MM format
+    
+    const todayAttendance = await this.getTodayAttendance(employeeId);
+    if (!todayAttendance || !todayAttendance.punchIn) {
+      throw new Error("No punch-in record found for today");
+    }
+
+    // Calculate working hours
+    const punchInParts = todayAttendance.punchIn.split(':');
+    const punchInMinutes = parseInt(punchInParts[0]) * 60 + parseInt(punchInParts[1]);
+    const punchOutParts = punchOutTime.split(':');
+    const punchOutMinutes = parseInt(punchOutParts[0]) * 60 + parseInt(punchOutParts[1]);
+    const workingMinutes = punchOutMinutes - punchInMinutes;
+
+    return this.updateAttendance(todayAttendance.id, {
+      punchOut: punchOutTime,
+      workingHours: workingMinutes,
+    });
+  }
+
+  // Leave Request methods
+  async getLeaveRequests(): Promise<LeaveRequest[]> {
+    return Array.from(this.leaveRequests.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  async getLeaveRequestsByEmployee(employeeId: string): Promise<LeaveRequest[]> {
+    return Array.from(this.leaveRequests.values())
+      .filter(req => req.employeeId === employeeId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createLeaveRequest(insertRequest: InsertLeaveRequest): Promise<LeaveRequest> {
+    const id = randomUUID();
+    const request: LeaveRequest = {
+      ...insertRequest,
+      id,
+      status: insertRequest.status || "pending",
+      approvedBy: insertRequest.approvedBy || null,
+      approvedAt: insertRequest.approvedAt || null,
+      comments: insertRequest.comments || null,
+      createdAt: new Date(),
+    };
+    this.leaveRequests.set(id, request);
+    return request;
+  }
+
+  async updateLeaveRequest(id: string, updates: Partial<InsertLeaveRequest>): Promise<LeaveRequest | undefined> {
+    const request = this.leaveRequests.get(id);
+    if (!request) return undefined;
+    
+    const updatedRequest = { ...request, ...updates };
+    this.leaveRequests.set(id, updatedRequest);
+    return updatedRequest;
+  }
+
+  async approveLeaveRequest(id: string, approvedBy: string): Promise<LeaveRequest | undefined> {
+    return this.updateLeaveRequest(id, {
+      status: "approved",
+      approvedBy,
+      approvedAt: new Date(),
+    });
+  }
+
+  async rejectLeaveRequest(id: string, approvedBy: string, comments?: string): Promise<LeaveRequest | undefined> {
+    return this.updateLeaveRequest(id, {
+      status: "rejected",
+      approvedBy,
+      approvedAt: new Date(),
+      comments,
+    });
+  }
+
+  // Department methods
+  async getDepartments(): Promise<Department[]> {
+    return Array.from(this.departments.values());
+  }
+
+  async getDepartment(id: string): Promise<Department | undefined> {
+    return this.departments.get(id);
+  }
+
+  async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
+    const id = randomUUID();
+    const department: Department = {
+      ...insertDepartment,
+      id,
+      description: insertDepartment.description || null,
+      managerId: insertDepartment.managerId || null,
+      budget: insertDepartment.budget || 0,
+      status: insertDepartment.status || "active",
+      createdAt: new Date(),
+    };
+    this.departments.set(id, department);
+    return department;
+  }
+
+  async updateDepartment(id: string, updates: Partial<InsertDepartment>): Promise<Department | undefined> {
+    const department = this.departments.get(id);
+    if (!department) return undefined;
+    
+    const updatedDepartment = { ...department, ...updates };
+    this.departments.set(id, updatedDepartment);
+    return updatedDepartment;
+  }
+
+  async deleteDepartment(id: string): Promise<boolean> {
+    return this.departments.delete(id);
+  }
+
+  // Payroll methods
+  async getPayroll(): Promise<Payroll[]> {
+    return Array.from(this.payroll.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  async getPayrollByEmployee(employeeId: string): Promise<Payroll[]> {
+    return Array.from(this.payroll.values())
+      .filter(pay => pay.employeeId === employeeId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createPayroll(insertPayroll: InsertPayroll): Promise<Payroll> {
+    const id = randomUUID();
+    const payroll: Payroll = {
+      ...insertPayroll,
+      id,
+      allowances: insertPayroll.allowances || 0,
+      deductions: insertPayroll.deductions || 0,
+      bonus: insertPayroll.bonus || 0,
+      overtime: insertPayroll.overtime || 0,
+      status: insertPayroll.status || "pending",
+      processedAt: insertPayroll.processedAt || null,
+      createdAt: new Date(),
+    };
+    this.payroll.set(id, payroll);
+    return payroll;
+  }
+
+  async updatePayroll(id: string, updates: Partial<InsertPayroll>): Promise<Payroll | undefined> {
+    const payroll = this.payroll.get(id);
+    if (!payroll) return undefined;
+    
+    const updatedPayroll = { ...payroll, ...updates };
+    this.payroll.set(id, updatedPayroll);
+    return updatedPayroll;
   }
 }
 

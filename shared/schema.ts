@@ -117,6 +117,64 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Attendance tracking table
+export const attendance = pgTable("attendance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  punchIn: text("punch_in"), // HH:MM format
+  punchOut: text("punch_out"), // HH:MM format
+  status: text("status").notNull(), // present, absent, late, half-day
+  workingHours: integer("working_hours").default(0), // in minutes
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Leave management table
+export const leaveRequests = pgTable("leave_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  leaveType: text("leave_type").notNull(), // vacation, sick, personal, emergency
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  days: integer("days").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  approvedBy: varchar("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  comments: text("comments"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Department management table
+export const departments = pgTable("departments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  managerId: varchar("manager_id"),
+  budget: integer("budget").default(0),
+  status: text("status").notNull().default("active"), // active, inactive
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Payroll management table
+export const payroll = pgTable("payroll", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  month: text("month").notNull(), // YYYY-MM format
+  basicSalary: integer("basic_salary").notNull(),
+  allowances: integer("allowances").default(0),
+  deductions: integer("deductions").default(0),
+  bonus: integer("bonus").default(0),
+  overtime: integer("overtime").default(0),
+  grossSalary: integer("gross_salary").notNull(),
+  netSalary: integer("net_salary").notNull(),
+  status: text("status").notNull().default("pending"), // pending, processed, paid
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -156,6 +214,27 @@ export const insertPlansetSchema = createInsertSchema(plansets).omit({
   receivedTime: z.string().optional(),
 });
 
+export const insertAttendanceSchema = createInsertSchema(attendance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayrollSchema = createInsertSchema(payroll).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -176,3 +255,15 @@ export type EmployeeProfile = typeof employeeProfiles.$inferSelect;
 
 export type InsertPlanset = z.infer<typeof insertPlansetSchema>;
 export type Planset = typeof plansets.$inferSelect;
+
+export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
+export type Attendance = typeof attendance.$inferSelect;
+
+export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
+export type LeaveRequest = typeof leaveRequests.$inferSelect;
+
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type Department = typeof departments.$inferSelect;
+
+export type InsertPayroll = z.infer<typeof insertPayrollSchema>;
+export type Payroll = typeof payroll.$inferSelect;

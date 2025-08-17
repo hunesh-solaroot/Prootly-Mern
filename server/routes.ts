@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertEmployeeSchema, insertClientSchema, insertCommentSchema, insertPlansetSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertClientSchema, insertCommentSchema, insertPlansetSchema, insertAttendanceSchema, insertLeaveRequestSchema, insertDepartmentSchema, insertPayrollSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Employee routes
@@ -409,6 +409,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete planset" });
+    }
+  });
+
+  // Attendance routes
+  app.get("/api/attendance", async (req, res) => {
+    try {
+      const attendance = await storage.getAttendance();
+      res.json(attendance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch attendance" });
+    }
+  });
+
+  app.get("/api/employees/:employeeId/attendance", async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      const attendance = await storage.getAttendanceByEmployee(employeeId);
+      res.json(attendance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch employee attendance" });
+    }
+  });
+
+  app.get("/api/attendance/today/:employeeId", async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      const attendance = await storage.getTodayAttendance(employeeId);
+      res.json(attendance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch today's attendance" });
+    }
+  });
+
+  app.post("/api/attendance/punch-in", async (req, res) => {
+    try {
+      const { employeeId } = req.body;
+      if (!employeeId) {
+        return res.status(400).json({ message: "Employee ID required" });
+      }
+      const attendance = await storage.punchIn(employeeId);
+      res.status(201).json(attendance);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to punch in" });
+    }
+  });
+
+  app.post("/api/attendance/punch-out", async (req, res) => {
+    try {
+      const { employeeId } = req.body;
+      if (!employeeId) {
+        return res.status(400).json({ message: "Employee ID required" });
+      }
+      const attendance = await storage.punchOut(employeeId);
+      res.json(attendance);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to punch out" });
+    }
+  });
+
+  // Leave Request routes
+  app.get("/api/leave-requests", async (req, res) => {
+    try {
+      const requests = await storage.getLeaveRequests();
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch leave requests" });
+    }
+  });
+
+  app.get("/api/employees/:employeeId/leave-requests", async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      const requests = await storage.getLeaveRequestsByEmployee(employeeId);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch employee leave requests" });
+    }
+  });
+
+  app.post("/api/leave-requests", async (req, res) => {
+    try {
+      const result = insertLeaveRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid leave request data" });
+      }
+      const request = await storage.createLeaveRequest(result.data);
+      res.status(201).json(request);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create leave request" });
+    }
+  });
+
+  app.put("/api/leave-requests/:id/approve", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { approvedBy } = req.body;
+      if (!approvedBy) {
+        return res.status(400).json({ message: "Approved by field required" });
+      }
+      const request = await storage.approveLeaveRequest(id, approvedBy);
+      if (!request) {
+        return res.status(404).json({ message: "Leave request not found" });
+      }
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to approve leave request" });
+    }
+  });
+
+  app.put("/api/leave-requests/:id/reject", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { approvedBy, comments } = req.body;
+      if (!approvedBy) {
+        return res.status(400).json({ message: "Approved by field required" });
+      }
+      const request = await storage.rejectLeaveRequest(id, approvedBy, comments);
+      if (!request) {
+        return res.status(404).json({ message: "Leave request not found" });
+      }
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reject leave request" });
+    }
+  });
+
+  // Department routes
+  app.get("/api/departments", async (req, res) => {
+    try {
+      const departments = await storage.getDepartments();
+      res.json(departments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch departments" });
+    }
+  });
+
+  app.post("/api/departments", async (req, res) => {
+    try {
+      const result = insertDepartmentSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid department data" });
+      }
+      const department = await storage.createDepartment(result.data);
+      res.status(201).json(department);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create department" });
+    }
+  });
+
+  app.put("/api/departments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = insertDepartmentSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid department data" });
+      }
+      const department = await storage.updateDepartment(id, result.data);
+      if (!department) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      res.json(department);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update department" });
+    }
+  });
+
+  app.delete("/api/departments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteDepartment(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete department" });
+    }
+  });
+
+  // Payroll routes
+  app.get("/api/payroll", async (req, res) => {
+    try {
+      const payroll = await storage.getPayroll();
+      res.json(payroll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payroll" });
+    }
+  });
+
+  app.get("/api/employees/:employeeId/payroll", async (req, res) => {
+    try {
+      const { employeeId } = req.params;
+      const payroll = await storage.getPayrollByEmployee(employeeId);
+      res.json(payroll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch employee payroll" });
+    }
+  });
+
+  app.post("/api/payroll", async (req, res) => {
+    try {
+      const result = insertPayrollSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid payroll data" });
+      }
+      const payroll = await storage.createPayroll(result.data);
+      res.status(201).json(payroll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create payroll" });
     }
   });
 

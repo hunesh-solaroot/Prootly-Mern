@@ -30,6 +30,10 @@ import Electrical from "./pages/garage/Electrical";
 import Structural from "./pages/garage/Structural";
 import Requirements from "./pages/garage/Requirements";
 
+// Organisation/HRM Pages
+import OrganisationDashboard from "./pages/organisation/OrganisationDashboard";
+import AttendanceManagement from "./pages/organisation/AttendanceManagement";
+
 function Router() {
   return (
     <Layout>
@@ -57,6 +61,10 @@ function Router() {
         <Route path="/garage/electrical" component={Electrical} />
         <Route path="/garage/structural" component={Structural} />
         <Route path="/garage/requirements" component={Requirements} />
+
+        {/* Organisation/HRM Routes */}
+        <Route path="/organisation/dashboard" component={OrganisationDashboard} />
+        <Route path="/organisation/attendance" component={AttendanceManagement} />
 
         {/* NotFound Route should be last */}
         <Route component={NotFound} />

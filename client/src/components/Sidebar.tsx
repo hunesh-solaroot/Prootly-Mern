@@ -10,6 +10,7 @@ import {
   UserCheck,
   Settings,
   User,
+  Building,
 } from "lucide-react";
 import {
   Tooltip,
@@ -57,6 +58,22 @@ const navigationItems = [
     ],
   },
   { path: "/members", label: "Members", icon: UserCheck },
+  {
+    path: "/organisation",
+    label: "Organisation",
+    icon: Building,
+    hasDropdown: true,
+    dropdownItems: [
+      { path: "/organisation/dashboard", label: "Dashboard" },
+      { path: "/organisation/employee-management", label: "Employee Management" },
+      { path: "/organisation/attendance", label: "Attendance Management" },
+      { path: "/organisation/leave-management", label: "Leave Management" },
+      { path: "/organisation/payroll", label: "Payroll Management" },
+      { path: "/organisation/departments", label: "Department & Role" },
+      { path: "/organisation/reports", label: "Reports & Analytics" },
+      { path: "/organisation/settings", label: "Settings" },
+    ],
+  },
   { path: "/profile", label: "Profile", icon: User },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
