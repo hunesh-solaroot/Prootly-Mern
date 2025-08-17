@@ -33,6 +33,12 @@ import Requirements from "./pages/garage/Requirements";
 // Organisation/HRM Pages
 import OrganisationDashboard from "./pages/organisation/OrganisationDashboard";
 import AttendanceManagement from "./pages/organisation/AttendanceManagement";
+import EmployeeManagement from "./pages/organisation/EmployeeManagement";
+import LeaveManagement from "./pages/organisation/LeaveManagement";
+import PayrollManagement from "./pages/organisation/PayrollManagement";
+import DepartmentManagement from "./pages/organisation/DepartmentManagement";
+import ReportsAnalytics from "./pages/organisation/ReportsAnalytics";
+import OrganisationSettings from "./pages/organisation/OrganisationSettings";
 
 function Router() {
   return (
@@ -64,7 +70,13 @@ function Router() {
 
         {/* Organisation/HRM Routes */}
         <Route path="/organisation/dashboard" component={OrganisationDashboard} />
+        <Route path="/organisation/employee-management" component={EmployeeManagement} />
         <Route path="/organisation/attendance" component={AttendanceManagement} />
+        <Route path="/organisation/leave-management" component={LeaveManagement} />
+        <Route path="/organisation/payroll" component={PayrollManagement} />
+        <Route path="/organisation/departments" component={DepartmentManagement} />
+        <Route path="/organisation/reports" component={ReportsAnalytics} />
+        <Route path="/organisation/settings" component={OrganisationSettings} />
 
         {/* NotFound Route should be last */}
         <Route component={NotFound} />
